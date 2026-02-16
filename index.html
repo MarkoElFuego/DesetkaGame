@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DESETKA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Bungee&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="top-bar">
+  <div class="bar-l">
+    <div class="st"><span class="st-l">Score</span><span class="st-v" id="sv-sc">0</span></div>
+    <div class="st"><span class="st-l">Combo</span><span class="st-v" id="sv-cm">—</span></div>
+  </div>
+  <div class="bar-c">
+    <button class="ibtn" id="btn-pause">❚❚</button>
+    <button class="ibtn on" id="btn-sound">♪</button>
+  </div>
+  <div class="bar-r">
+    <div class="st"><span class="st-l">Level</span><span class="st-v" id="sv-lv">1</span></div>
+    <div class="st"><span class="st-l">Best</span><span class="st-v" id="sv-bt">0</span></div>
+  </div>
+</div>
+
+<div id="gw"><div id="gb">
+  <div id="dz"></div>
+  <canvas id="gc"></canvas>
+  <div id="tw"><div id="tf"></div></div>
+  <div id="sb">⚡ DESETKA ⚡</div>
+
+  <div id="ov-go" class="ov" style="display:none">
+    <h1 style="color:var(--red)">KRAJ</h1>
+    <div class="fn" id="f-sc">0</div>
+    <div class="fs" id="f-bt">Best: 0</div>
+    <button class="mbtn" id="btn-restart">PONOVO</button>
+  </div>
+
+  <div id="ov-pa" class="ov" style="display:none">
+    <h1>PAUZA</h1>
+    <p>Esc ili P</p>
+    <button class="mbtn" id="btn-resume">NASTAVI</button>
+  </div>
+
+  <div id="ov-st" class="ov">
+    <h1>DESETKA</h1>
+    <div id="lg">
+      <div class="lp"><span class="ld" style="background:#3a6fe8"></span>1+9<span class="ld" style="background:#e8853a"></span></div>
+      <div class="lp"><span class="ld" style="background:#4a8af0"></span>2+8<span class="ld" style="background:#f0a04a"></span></div>
+      <div class="lp"><span class="ld" style="background:#40c4b0"></span>3+7<span class="ld" style="background:#e04060"></span></div>
+      <div class="lp"><span class="ld" style="background:#45d470"></span>4+6<span class="ld" style="background:#a855e0"></span></div>
+      <div class="lp"><span class="ld" style="background:#f0c040"></span>5+5<span class="ld" style="background:#f0c040"></span></div>
+      <div class="lp" style="border:1px solid var(--brd)"><span class="ld" style="background:#40c4b0"></span>3+3<span class="ld" style="background:#40c4b0"></span></div>
+      <div class="lp" style="border:1px solid var(--brd)"><span class="ld" style="background:#e8853a"></span>9+9<span class="ld" style="background:#e8853a"></span></div>
+    </div>
+    <div class="tg">
+      <div class="tc"><div class="tt" style="color:var(--cyan)">🎯 SPOJI = 10</div><div class="td">Klikni broj, prevuci do drugog. Zbir = 10.</div></div>
+      <div class="tc"><div class="tt" style="color:var(--grn)">🔢 ISTI + ISTI</div><div class="td">Spoji dva ista broja ako su blizu (≤2). Manje poena, bez combo-a.</div></div>
+      <div class="tc"><div class="tt" style="color:var(--gold)">📏 DALJE = VIŠE</div><div class="td">Dalji parovi daju više poena.</div></div>
+      <div class="tc"><div class="tt" style="color:var(--red)">⚡ COMBO</div><div class="td">Brzi potezi množe poene x2, x3...</div></div>
+      <div class="tc"><div class="tt" style="color:#aaa">💀 OPSTANI</div><div class="td">Redovi rastu. Ne daj da stignu do vrha!</div></div>
+    </div>
+    <button class="mbtn" id="btn-start">START</button>
+  </div>
+</div></div>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

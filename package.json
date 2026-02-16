@@ -1,0 +1,22 @@
+{
+  "name": "desetka-game",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "DESETKA - Math puzzle game. Connect numbers that sum to 10!",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["game", "puzzle", "math"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  },
+  "dependencies": {
+    "@capacitor/cli": "^8.1.0",
+    "@capacitor/core": "^8.1.0"
+  }
+}
