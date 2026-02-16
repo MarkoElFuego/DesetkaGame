@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  base: '/DesetkaGame/',
   root: '.',
   build: {
     outDir: 'dist',
