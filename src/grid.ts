@@ -2,9 +2,8 @@ import { COLS, ROWS, BASE_INT } from './config';
 import { SpecialType } from './types';
 import type { Cell } from './types';
 import { state } from './state';
-import { sfxBomb, sfxSpawn, sfxDanger } from './audio';
-import { emit } from './particles';
-import { shake, boardBounce, setLastStand } from './ui';
+import { sfxSpawn, sfxDanger } from './audio';
+import { boardBounce, setLastStand } from './ui';
 import { findHint } from './match';
 
 let _onGameOver: (() => void) | null = null;
@@ -21,7 +20,7 @@ export function makeCell(row: number, col: number, sp: SpecialType = SpecialType
     col,
     sp,
     locked: sp === SpecialType.LOCKED,
-    bombT: sp === SpecialType.BOMB ? 3 : 0,
+    bombT: 0,
     frozen: false,
     id: Math.random(),
   };
@@ -30,11 +29,58 @@ export function makeCell(row: number, col: number, sp: SpecialType = SpecialType
 export function getSpecial(level: number): SpecialType {
   if (level < 3) return SpecialType.NONE;
   const r = Math.random();
-  if (level >= 7 && r < 0.04) return SpecialType.ICE;
-  if (level >= 5 && r < 0.09) return SpecialType.BOMB;
   if (r < 0.06) return SpecialType.JOKER;
   if (r < 0.14) return SpecialType.LOCKED;
   return SpecialType.NONE;
+}
+
+/** Ensure new row always has at least one valid pair (sum=10) with existing grid */
+export function makeSmartRow(row: number): Cell[] {
+  const cells: Cell[] = [];
+  for (let c = 0; c < COLS; c++) {
+    cells.push(makeCell(row, c, getSpecial(state.level)));
+  }
+
+  // Check if any valid pair exists on the whole board (including new row)
+  // If not, force a guaranteed pair into the new row
+  const allCells: Cell[] = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (state.grid[r] && state.grid[r][c]) allCells.push(state.grid[r][c]!);
+    }
+  }
+
+  // Check if new row has at least one match with existing cells
+  let hasMatch = false;
+  for (const newCell of cells) {
+    if (newCell.sp === SpecialType.JOKER) { hasMatch = true; break; }
+    for (const existing of allCells) {
+      if (existing.sp === SpecialType.JOKER) { hasMatch = true; break; }
+      if (newCell.num + existing.num === 10) { hasMatch = true; break; }
+    }
+    if (hasMatch) break;
+  }
+
+  // Also check within the new row itself
+  if (!hasMatch) {
+    for (let i = 0; i < cells.length; i++) {
+      for (let j = i + 1; j < cells.length; j++) {
+        if (cells[i].num + cells[j].num === 10) { hasMatch = true; break; }
+      }
+      if (hasMatch) break;
+    }
+  }
+
+  // If no match, force a complementary pair in the new row
+  if (!hasMatch && cells.length >= 2) {
+    const base = Math.floor(Math.random() * 4) + 1; // 1-4
+    const idx1 = Math.floor(Math.random() * COLS);
+    let idx2 = (idx1 + 1 + Math.floor(Math.random() * (COLS - 1))) % COLS;
+    cells[idx1].num = base;
+    cells[idx2].num = 10 - base;
+  }
+
+  return cells;
 }
 
 export function gravity(): boolean {
@@ -57,49 +103,6 @@ export function gravity(): boolean {
   return moved;
 }
 
-export function updateFreeze(): void {
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (state.grid[r][c]) state.grid[r][c]!.frozen = false;
-    }
-  }
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      const cell = state.grid[r][c];
-      if (!cell || cell.sp !== SpecialType.ICE) continue;
-      const neighbors: [number, number][] = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-      for (const [dr, dc] of neighbors) {
-        const nr = r + dr, nc = c + dc;
-        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
-          const neighbor = state.grid[nr][nc];
-          if (neighbor && neighbor.sp !== SpecialType.ICE) {
-            neighbor.frozen = true;
-          }
-        }
-      }
-    }
-  }
-}
-
-export function tickBombs(): boolean {
-  let exploded = false;
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      const cell = state.grid[r][c];
-      if (!cell || cell.sp !== SpecialType.BOMB) continue;
-      cell.bombT--;
-      if (cell.bombT <= 0) {
-        sfxBomb();
-        shake();
-        emit(c * state.cellSize + state.cellSize / 2, r * state.cellSize + state.cellSize / 2, '#ff3b4a', 20);
-        state.grid[r][c] = null;
-        exploded = true;
-      }
-    }
-  }
-  return exploded;
-}
-
 export function spawnRow(): void {
   // Check game over
   for (let c = 0; c < COLS; c++) {
@@ -117,23 +120,17 @@ export function spawnRow(): void {
     }
   }
 
-  // New bottom row
+  // New bottom row - smart generation
+  const newCells = makeSmartRow(ROWS - 1);
   state.grid[ROWS - 1] = [];
   for (let c = 0; c < COLS; c++) {
-    state.grid[ROWS - 1][c] = makeCell(ROWS - 1, c, getSpecial(state.level));
+    state.grid[ROWS - 1][c] = newCells[c];
   }
 
   boardBounce();
   sfxSpawn();
 
-  const exp = tickBombs();
-  if (exp) {
-    setTimeout(() => spawnRow(), 300);
-    return;
-  }
-
   gravity();
-  updateFreeze();
 
   // Last stand check
   let topOccupied = false;

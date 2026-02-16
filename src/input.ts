@@ -30,7 +30,7 @@ function onStart(e: MouseEvent | TouchEvent): void {
   const p = getPointer(e);
   if (inBounds(p.row, p.col)) {
     const cell = state.grid[p.row][p.col];
-    if (cell && !cell.frozen) {
+    if (cell) {
       state.isDragging = true;
       state.dragStart = cell;
       state.dragEnd = null;
@@ -47,7 +47,7 @@ function onMove(e: MouseEvent | TouchEvent): void {
   state.pointer = { x: p.x, y: p.y };
   if (state.isDragging && state.dragStart && inBounds(p.row, p.col)) {
     const target = state.grid[p.row][p.col];
-    state.dragEnd = (target && target !== state.dragStart && !target.frozen) ? target : null;
+    state.dragEnd = (target && target !== state.dragStart) ? target : null;
   }
 }
 
@@ -57,7 +57,7 @@ function onEnd(e: MouseEvent | TouchEvent): void {
   const p = getPointer(e);
   if (inBounds(p.row, p.col)) {
     const target = state.grid[p.row][p.col];
-    if (target && target !== state.dragStart && !target.frozen) {
+    if (target && target !== state.dragStart) {
       if (isValid(state.dragStart, target)) {
         processMatch(state.dragStart!, target);
       } else {

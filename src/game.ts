@@ -2,7 +2,7 @@ import { COLS, ROWS, BASE_INT } from './config';
 import { state } from './state';
 import { initAudio, sfxOver } from './audio';
 import { makeCell, setGameOverCallback } from './grid';
-import { updateFreeze, spawnRow } from './grid';
+import { spawnRow } from './grid';
 import { findHint } from './match';
 import { draw } from './renderer';
 import { tickParticles } from './particles';
@@ -56,7 +56,6 @@ export function startGame(): void {
   showDesekta(false);
   clearFloatingText();
 
-  updateFreeze();
   resize();
   findHint();
 

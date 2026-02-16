@@ -2,10 +2,10 @@ import { COLS, ROWS, COMBO_WIN, STREAK_GOAL, STREAK_DUR, BASE_INT, NUM_COLORS } 
 import { SpecialType } from './types';
 import type { Cell } from './types';
 import { state } from './state';
-import { sfxMatch, sfxClick, sfxJoker, sfxBomb, sfxStreak, sfxLevelUp } from './audio';
+import { sfxMatch, sfxClick, sfxJoker, sfxStreak, sfxLevelUp } from './audio';
 import { emit } from './particles';
 import { floatingText, shake, updateScore, updateLevel, showDesekta, updateCombo } from './ui';
-import { gravity, updateFreeze } from './grid';
+import { gravity } from './grid';
 
 export function cellColor(cell: Cell): string {
   return cell.sp === SpecialType.JOKER ? '#ffffff' : NUM_COLORS[cell.num];
@@ -17,7 +17,6 @@ export function manhattanDist(a: Cell, b: Cell): number {
 
 export function isValid(a: Cell | null, b: Cell | null): boolean {
   if (!a || !b || a === b) return false;
-  if (a.frozen || b.frozen) return false;
   if (a.sp === SpecialType.JOKER || b.sp === SpecialType.JOKER) return true;
   if (a.num + b.num === 10) return true;
   if (a.num === b.num && manhattanDist(a, b) <= 2) return true;
@@ -32,12 +31,12 @@ export function findHint(): void {
   for (let r1 = 0; r1 < ROWS; r1++) {
     for (let c1 = 0; c1 < COLS; c1++) {
       const a = state.grid[r1][c1];
-      if (!a || a.frozen) continue;
+      if (!a) continue;
       for (let r2 = r1; r2 < ROWS; r2++) {
         const startC = r2 === r1 ? c1 + 1 : 0;
         for (let c2 = startC; c2 < COLS; c2++) {
           const b = state.grid[r2][c2];
-          if (!b || b.frozen) continue;
+          if (!b) continue;
           if (isValid(a, b)) {
             const d = manhattanDist(a, b);
             if (d < bestDist) {
@@ -94,44 +93,19 @@ export function processMatch(a: Cell, b: Cell): void {
     return;
   }
 
-  // Bomb defuse: clear entire row
-  let bombBonus = 0;
-  if (a.sp === SpecialType.BOMB) {
-    for (let c = 0; c < COLS; c++) {
-      const x = state.grid[a.row][c];
-      if (x && x !== b) {
-        emit(c * state.cellSize + state.cellSize / 2, a.row * state.cellSize + state.cellSize / 2, '#ff3b4a', 5);
-        state.grid[a.row][c] = null;
-        bombBonus += 20;
-      }
-    }
-    sfxBomb();
-  }
-  if (b.sp === SpecialType.BOMB) {
-    for (let c = 0; c < COLS; c++) {
-      const x = state.grid[b.row][c];
-      if (x && x !== a) {
-        emit(c * state.cellSize + state.cellSize / 2, b.row * state.cellSize + state.cellSize / 2, '#ff3b4a', 5);
-        state.grid[b.row][c] = null;
-        bombBonus += 20;
-      }
-    }
-    sfxBomb();
-  }
-
   if (a.sp === SpecialType.JOKER || b.sp === SpecialType.JOKER) sfxJoker();
 
-  // Remove cells + particles
+  // Remove cells + particles (more particles for excitement!)
   const colA = cellColor(a);
   const colB = cellColor(b);
-  emit(a.col * state.cellSize + state.cellSize / 2, a.row * state.cellSize + state.cellSize / 2, colA, isSame ? 5 : 10);
-  emit(b.col * state.cellSize + state.cellSize / 2, b.row * state.cellSize + state.cellSize / 2, colB, isSame ? 5 : 10);
+  emit(a.col * state.cellSize + state.cellSize / 2, a.row * state.cellSize + state.cellSize / 2, colA, isSame ? 8 : 16);
+  emit(b.col * state.cellSize + state.cellSize / 2, b.row * state.cellSize + state.cellSize / 2, colB, isSame ? 8 : 16);
   state.grid[a.row][a.col] = null;
   state.grid[b.row][b.col] = null;
 
   // Score
   const distBonus = isSame ? 0 : Math.floor(dist * 8);
-  const base = (isSame ? 15 : 50) + distBonus + bombBonus;
+  const base = (isSame ? 15 : 50) + distBonus;
   let comboMult = 1;
   const desetkaMult = state.desetkaMode ? 2 : 1;
   if (!isSame) comboMult = registerCombo();
@@ -166,7 +140,6 @@ export function processMatch(a: Cell, b: Cell): void {
   }
 
   gravity();
-  updateFreeze();
   state.hintTimer = 0;
   state.hintCells = [];
   setTimeout(() => findHint(), 200);
