@@ -1,14 +1,13 @@
 import { COLS, ROWS, COMBO_WIN, STREAK_GOAL, STREAK_DUR, BASE_INT, NUM_COLORS } from './config';
-import { SpecialType } from './types';
 import type { Cell } from './types';
 import { state } from './state';
-import { sfxMatch, sfxClick, sfxJoker, sfxStreak, sfxLevelUp } from './audio';
+import { sfxMatch, sfxStreak, sfxLevelUp } from './audio';
 import { emit } from './particles';
 import { floatingText, shake, updateScore, updateLevel, showDesekta, updateCombo } from './ui';
 import { gravity } from './grid';
 
 export function cellColor(cell: Cell): string {
-  return cell.sp === SpecialType.JOKER ? '#ffffff' : NUM_COLORS[cell.num];
+  return NUM_COLORS[cell.num];
 }
 
 export function manhattanDist(a: Cell, b: Cell): number {
@@ -17,9 +16,10 @@ export function manhattanDist(a: Cell, b: Cell): number {
 
 export function isValid(a: Cell | null, b: Cell | null): boolean {
   if (!a || !b || a === b) return false;
-  if (a.sp === SpecialType.JOKER || b.sp === SpecialType.JOKER) return true;
+  // Sum to 10 = always valid
   if (a.num + b.num === 10) return true;
-  if (a.num === b.num && manhattanDist(a, b) <= 2) return true;
+  // Same number = valid from any distance
+  if (a.num === b.num) return true;
   return false;
 }
 
@@ -68,34 +68,9 @@ function activateDesetkaMode(): void {
 
 export function processMatch(a: Cell, b: Cell): void {
   const dist = manhattanDist(a, b);
-  const isSame = a.num === b.num
-    && a.sp !== SpecialType.JOKER
-    && b.sp !== SpecialType.JOKER
-    && a.num + b.num !== 10;
+  const isSame = a.num === b.num && a.num + b.num !== 10;
 
-  // Locked: first hit unlocks
-  if (a.locked) {
-    a.locked = false;
-    a.sp = SpecialType.NONE;
-    floatingText('🔓', a.col * state.cellSize + state.cellSize / 2, a.row * state.cellSize, false);
-    sfxClick();
-    state.hintTimer = 0;
-    findHint();
-    return;
-  }
-  if (b.locked) {
-    b.locked = false;
-    b.sp = SpecialType.NONE;
-    floatingText('🔓', b.col * state.cellSize + state.cellSize / 2, b.row * state.cellSize, false);
-    sfxClick();
-    state.hintTimer = 0;
-    findHint();
-    return;
-  }
-
-  if (a.sp === SpecialType.JOKER || b.sp === SpecialType.JOKER) sfxJoker();
-
-  // Remove cells + particles (more particles for excitement!)
+  // Remove cells + particles
   const colA = cellColor(a);
   const colB = cellColor(b);
   emit(a.col * state.cellSize + state.cellSize / 2, a.row * state.cellSize + state.cellSize / 2, colA, isSame ? 8 : 16);
@@ -103,32 +78,26 @@ export function processMatch(a: Cell, b: Cell): void {
   state.grid[a.row][a.col] = null;
   state.grid[b.row][b.col] = null;
 
-  // Score
-  const distBonus = isSame ? 0 : Math.floor(dist * 8);
-  const base = (isSame ? 15 : 50) + distBonus;
-  let comboMult = 1;
+  // Score: same-number matches now also get distance bonus
+  const distBonus = Math.floor(dist * 8);
+  const base = (isSame ? 30 : 50) + distBonus;
+  const comboMult = registerCombo();
   const desetkaMult = state.desetkaMode ? 2 : 1;
-  if (!isSame) comboMult = registerCombo();
   const pts = Math.round(base * comboMult * desetkaMult);
 
-  sfxMatch(
-    a.sp === SpecialType.JOKER ? 5 : a.num,
-    b.sp === SpecialType.JOKER ? 5 : b.num,
-  );
+  sfxMatch(a.num, b.num);
   if (dist >= 8) shake();
 
   const mx = (a.col + b.col) / 2 * state.cellSize + state.cellSize / 2;
   const my = (a.row + b.row) / 2 * state.cellSize;
-  floatingText('+' + pts, mx, my, !isSame && comboMult > 1);
+  floatingText('+' + pts, mx, my, comboMult > 1);
 
   state.score += pts;
   updateScore();
 
-  // Streak
-  if (!isSame) {
-    state.streak++;
-    if (state.streak >= STREAK_GOAL && !state.desetkaMode) activateDesetkaMode();
-  }
+  // Streak - all matches count now
+  state.streak++;
+  if (state.streak >= STREAK_GOAL && !state.desetkaMode) activateDesetkaMode();
 
   // Level
   const newLevel = Math.floor(state.score / 600) + 1;

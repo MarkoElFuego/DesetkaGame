@@ -49,21 +49,10 @@ export function sfxStreak(): void {
   setTimeout(() => tone(1175, 0.2, 'triangle', 0.15), 160);
 }
 
-export function sfxBomb(): void {
-  tone(80, 0.4, 'sawtooth', 0.12);
-  setTimeout(() => tone(60, 0.3, 'square', 0.08), 100);
-}
-
 export function sfxOver(): void {
   tone(300, 0.25, 'sawtooth', 0.08);
   setTimeout(() => tone(200, 0.3, 'sawtooth', 0.06), 180);
   setTimeout(() => tone(120, 0.5, 'sawtooth', 0.05), 360);
-}
-
-export function sfxJoker(): void {
-  tone(880, 0.08, 'sine', 0.1);
-  setTimeout(() => tone(1100, 0.08, 'sine', 0.08), 60);
-  setTimeout(() => tone(1320, 0.12, 'sine', 0.1), 120);
 }
 
 export function toggleSound(): void {

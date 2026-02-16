@@ -4,7 +4,6 @@ export const BASE_INT = 11500;
 export const COMBO_WIN = 2200;
 export const STREAK_GOAL = 5;
 export const STREAK_DUR = 5000;
-export const SAME_MAX_DIST = 2;
 
 export const NUM_COLORS: Record<number, string> = {
   1: '#3a6fe8',

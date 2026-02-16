@@ -1,5 +1,4 @@
 import { COLS, ROWS } from './config';
-import { SpecialType } from './types';
 import type { Cell } from './types';
 import { state } from './state';
 import { drawParticles } from './particles';
@@ -83,17 +82,6 @@ function drawCell(cell: Cell, x: number, y: number): void {
     ctx.shadowBlur = 0;
   }
 
-  // Locked dashed border
-  if (cell.sp === SpecialType.LOCKED && cell.locked) {
-    ctx.beginPath();
-    ctx.arc(cx, cy, r + 1, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([3, 3]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
   // Number text
   const fs = Math.round(CZ * 0.38);
   ctx.font = '700 ' + fs + 'px "Chakra Petch",sans-serif';
@@ -102,26 +90,13 @@ function drawCell(cell: Cell, x: number, y: number): void {
 
   // Text shadow for depth
   ctx.fillStyle = 'rgba(0,0,0,0.4)';
-  ctx.fillText(cell.sp === SpecialType.JOKER ? '★' : String(cell.num), cx + 1, cy + 2);
+  ctx.fillText(String(cell.num), cx + 1, cy + 2);
 
   ctx.fillStyle = '#fff';
   ctx.shadowColor = 'rgba(0,0,0,0.6)';
   ctx.shadowBlur = 2;
-
-  if (cell.sp === SpecialType.JOKER) {
-    ctx.font = '700 ' + Math.round(CZ * 0.45) + 'px sans-serif';
-    ctx.fillText('★', cx, cy + 1);
-  } else {
-    ctx.fillText(String(cell.num), cx, cy + 1);
-  }
+  ctx.fillText(String(cell.num), cx, cy + 1);
   ctx.shadowBlur = 0;
-
-  // Lock icon
-  if (cell.sp === SpecialType.LOCKED && cell.locked) {
-    ctx.font = Math.round(CZ * 0.2) + 'px sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.fillText('🔒', cx, cy - r + 6);
-  }
 }
 
 /** Lighten a hex color by amount */

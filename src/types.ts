@@ -1,19 +1,7 @@
-export const enum SpecialType {
-  NONE = 0,
-  LOCKED = 1,
-  BOMB = 2,
-  JOKER = 3,
-  ICE = 4,
-}
-
 export interface Cell {
   num: number;
   row: number;
   col: number;
-  sp: SpecialType;
-  locked: boolean;
-  bombT: number;
-  frozen: boolean;
   id: number;
 }
 

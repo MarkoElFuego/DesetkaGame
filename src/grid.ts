@@ -1,5 +1,4 @@
 import { COLS, ROWS, BASE_INT } from './config';
-import { SpecialType } from './types';
 import type { Cell } from './types';
 import { state } from './state';
 import { sfxSpawn, sfxDanger } from './audio';
@@ -12,70 +11,53 @@ export function setGameOverCallback(cb: () => void): void {
   _onGameOver = cb;
 }
 
-export function makeCell(row: number, col: number, sp: SpecialType = SpecialType.NONE): Cell {
-  const num = Math.floor(Math.random() * 9) + 1;
+export function makeCell(row: number, col: number): Cell {
   return {
-    num,
+    num: Math.floor(Math.random() * 9) + 1,
     row,
     col,
-    sp,
-    locked: sp === SpecialType.LOCKED,
-    bombT: 0,
-    frozen: false,
     id: Math.random(),
   };
-}
-
-export function getSpecial(level: number): SpecialType {
-  if (level < 3) return SpecialType.NONE;
-  const r = Math.random();
-  if (r < 0.06) return SpecialType.JOKER;
-  if (r < 0.14) return SpecialType.LOCKED;
-  return SpecialType.NONE;
 }
 
 /** Ensure new row always has at least one valid pair (sum=10) with existing grid */
 export function makeSmartRow(row: number): Cell[] {
   const cells: Cell[] = [];
   for (let c = 0; c < COLS; c++) {
-    cells.push(makeCell(row, c, getSpecial(state.level)));
+    cells.push(makeCell(row, c));
   }
 
-  // Check if any valid pair exists on the whole board (including new row)
-  // If not, force a guaranteed pair into the new row
-  const allCells: Cell[] = [];
+  // Collect all existing cell numbers
+  const existingNums: number[] = [];
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      if (state.grid[r] && state.grid[r][c]) allCells.push(state.grid[r][c]!);
+      if (state.grid[r] && state.grid[r][c]) existingNums.push(state.grid[r][c]!.num);
     }
   }
 
-  // Check if new row has at least one match with existing cells
+  // Check if any pair sums to 10 (new row vs existing, or within new row)
   let hasMatch = false;
-  for (const newCell of cells) {
-    if (newCell.sp === SpecialType.JOKER) { hasMatch = true; break; }
-    for (const existing of allCells) {
-      if (existing.sp === SpecialType.JOKER) { hasMatch = true; break; }
-      if (newCell.num + existing.num === 10) { hasMatch = true; break; }
+  for (const cell of cells) {
+    for (const n of existingNums) {
+      if (cell.num + n === 10) { hasMatch = true; break; }
     }
     if (hasMatch) break;
   }
-
-  // Also check within the new row itself
   if (!hasMatch) {
     for (let i = 0; i < cells.length; i++) {
       for (let j = i + 1; j < cells.length; j++) {
         if (cells[i].num + cells[j].num === 10) { hasMatch = true; break; }
+        if (cells[i].num === cells[j].num) { hasMatch = true; break; }
       }
       if (hasMatch) break;
     }
   }
 
-  // If no match, force a complementary pair in the new row
+  // Force a guaranteed pair
   if (!hasMatch && cells.length >= 2) {
-    const base = Math.floor(Math.random() * 4) + 1; // 1-4
+    const base = Math.floor(Math.random() * 4) + 1;
     const idx1 = Math.floor(Math.random() * COLS);
-    let idx2 = (idx1 + 1 + Math.floor(Math.random() * (COLS - 1))) % COLS;
+    const idx2 = (idx1 + 1 + Math.floor(Math.random() * (COLS - 1))) % COLS;
     cells[idx1].num = base;
     cells[idx2].num = 10 - base;
   }
@@ -129,7 +111,6 @@ export function spawnRow(): void {
 
   boardBounce();
   sfxSpawn();
-
   gravity();
 
   // Last stand check
