@@ -5,6 +5,7 @@ import { startGame, togglePause, resize } from './game';
 import { attachInput } from './input';
 import { initRenderer } from './renderer';
 import { updateBest } from './ui';
+import { useShuffle, useInferno, useFreeze } from './powerups';
 
 // Display stored best score
 updateBest();
@@ -21,6 +22,11 @@ document.getElementById('btn-sound')!.addEventListener('click', toggleSound);
 document.getElementById('btn-start')!.addEventListener('click', startGame);
 document.getElementById('btn-restart')!.addEventListener('click', startGame);
 document.getElementById('btn-resume')!.addEventListener('click', togglePause);
+
+// Power-up buttons
+document.getElementById('btn-shuffle')!.addEventListener('click', useShuffle);
+document.getElementById('btn-inferno')!.addEventListener('click', useInferno);
+document.getElementById('btn-freeze')!.addEventListener('click', useFreeze);
 
 // Keyboard
 document.addEventListener('keydown', (e) => {

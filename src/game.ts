@@ -6,6 +6,7 @@ import { spawnRow } from './grid';
 import { findHint } from './match';
 import { draw } from './renderer';
 import { tickParticles } from './particles';
+import { updatePowerUpUI } from './powerups';
 import {
   dom, updateBest,
   showOverlay, showGameOver, showDesekta, setLastStand, clearFloatingText,
@@ -46,6 +47,14 @@ export function startGame(): void {
   state.hintCells = [];
   state.hintTimer = 0;
 
+  // Power-ups: start with 1 shuffle
+  state.shuffleCount = 1;
+  state.infernoCount = 0;
+  state.freezeCount = 0;
+  state.freezeActive = false;
+  state.freezeTimer = 0;
+  state.lastComboHype = 0;
+
   dom.score.innerText = '0';
   dom.level.innerText = '1';
   dom.combo.innerText = '—';
@@ -55,6 +64,11 @@ export function startGame(): void {
   setLastStand(false);
   showDesekta(false);
   clearFloatingText();
+  updatePowerUpUI();
+
+  // Clear hype
+  const hype = document.getElementById('hype');
+  if (hype) { hype.className = ''; hype.innerText = ''; }
 
   resize();
   findHint();
@@ -107,6 +121,15 @@ function tickDesetkaMode(dt: number): void {
   }
 }
 
+function tickFreeze(dt: number): void {
+  if (!state.freezeActive) return;
+  state.freezeTimer -= dt;
+  if (state.freezeTimer <= 0) {
+    state.freezeActive = false;
+    state.freezeTimer = 0;
+  }
+}
+
 function loop(ts: number): void {
   if (!state.running || state.paused) return;
   const dt = ts - state.lastTimestamp;
@@ -114,15 +137,25 @@ function loop(ts: number): void {
 
   tickCombo(dt);
   tickDesetkaMode(dt);
+  tickFreeze(dt);
   tickParticles();
 
   // Hint timer
   if (state.hintCells.length > 0) state.hintTimer += dt;
 
-  // Spawn timer
-  state.spawnTimer += dt;
+  // Spawn timer (paused during freeze)
+  if (!state.freezeActive) {
+    state.spawnTimer += dt;
+  }
   const pct = Math.min(state.spawnTimer / state.spawnInterval * 100, 100);
   updateTimerBar(pct, ts);
+
+  // Freeze visual: pulse the timer bar blue
+  if (state.freezeActive) {
+    const tf = document.getElementById('tf')!;
+    tf.style.background = 'linear-gradient(90deg, #64b5f6, #42a5f5)';
+    tf.style.boxShadow = '0 0 12px #64b5f6';
+  }
 
   if (state.spawnTimer >= state.spawnInterval) {
     spawnRow();
@@ -135,7 +168,7 @@ function loop(ts: number): void {
 
 export function resize(): void {
   const barHeight = document.getElementById('top-bar')!.offsetHeight;
-  const h = window.innerHeight - barHeight - 36;
+  const h = window.innerHeight - barHeight - 60; // extra space for power-up buttons
   const w = window.innerWidth - 14;
   state.cellSize = Math.min(Math.floor(h / ROWS), Math.floor(w / COLS), 58);
 

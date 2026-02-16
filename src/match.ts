@@ -5,6 +5,7 @@ import { sfxMatch, sfxStreak, sfxLevelUp } from './audio';
 import { emit } from './particles';
 import { floatingText, shake, updateScore, updateLevel, showDesekta, updateCombo } from './ui';
 import { gravity } from './grid';
+import { showComboHype, awardComboReward, awardLevelReward, checkAndAutoShuffle } from './powerups';
 
 export function cellColor(cell: Cell): string {
   return NUM_COLORS[cell.num];
@@ -95,6 +96,10 @@ export function processMatch(a: Cell, b: Cell): void {
   state.score += pts;
   updateScore();
 
+  // Combo hype words + rewards
+  if (state.combo >= 2) showComboHype(state.combo);
+  awardComboReward(state.combo);
+
   // Streak - all matches count now
   state.streak++;
   if (state.streak >= STREAK_GOAL && !state.desetkaMode) activateDesetkaMode();
@@ -106,10 +111,17 @@ export function processMatch(a: Cell, b: Cell): void {
     updateLevel();
     if (!state.lastStand) state.spawnInterval = BASE_INT * Math.pow(0.93, state.level - 1);
     sfxLevelUp();
+    awardLevelReward(newLevel);
   }
 
   gravity();
   state.hintTimer = 0;
   state.hintCells = [];
-  setTimeout(() => findHint(), 200);
+  setTimeout(() => {
+    findHint();
+    // Auto-shuffle if stuck
+    if (state.hintCells.length === 0) {
+      setTimeout(() => checkAndAutoShuffle(), 500);
+    }
+  }, 200);
 }

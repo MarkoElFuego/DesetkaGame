@@ -39,6 +39,16 @@ export const state = {
   soundOn: true,
   audioCtx: null as AudioContext | null,
 
+  // Power-ups
+  shuffleCount: 0,
+  infernoCount: 0,
+  freezeCount: 0,
+  freezeActive: false,
+  freezeTimer: 0,
+
+  // Hype
+  lastComboHype: 0,
+
   // Cell size (calculated on resize)
   cellSize: 0,
 };
